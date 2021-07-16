@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "mutnt-query",
+    "mutnt-server"
+]
+
