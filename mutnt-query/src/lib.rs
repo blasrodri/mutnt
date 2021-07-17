@@ -3,5 +3,6 @@
 
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-mod lexer;
+mod command;
+mod errors;
 mod parser;

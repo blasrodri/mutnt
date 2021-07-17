@@ -1,0 +1,2 @@
+//! Errors
+pub struct Error {}
