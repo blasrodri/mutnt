@@ -1,12 +1,16 @@
 //! Parser ...
 
-use nom::{branch::alt, bytes::complete::tag_no_case, IResult};
+use nom::{
+    branch::alt,
+    bytes::complete::{tag_no_case, take_till},
+    character::{complete::space1, is_space},
+    IResult, Parser,
+};
 
 use crate::{
     command::{Command, CommandBuilder},
     errors::Error,
 };
-pub struct Parser;
 
 #[derive(Debug, PartialEq)]
 enum Token {
@@ -14,10 +18,27 @@ enum Token {
     Get,
     Insert,
     Delete,
+
+    // Datastructure
+    Datastructure(String),
 }
 
+// gets the `Token` and removes subsequent whitespaces
 fn get_command_action(input: &[u8]) -> IResult<&[u8], Token> {
-    alt((is_query, is_insert, is_delete))(input)
+    alt((is_query, is_insert, is_delete))(input).and_then(|(i, token)| {
+        let (input, _) = space1(i)?;
+        Ok((input, token))
+    })
+}
+
+fn get_datastructure_name(input: &[u8]) -> IResult<&[u8], Token> {
+    let (input, _) = tag_no_case("FROM")(input).and_then(|(i, _)| space1(i))?;
+    let (input, data_structure_name) = take_till(is_space)(input)?;
+    let (input, _) = space1(input)?;
+    Ok((
+        input,
+        Token::Datastructure(String::from_utf8(data_structure_name.to_ascii_lowercase()).unwrap()),
+    ))
 }
 
 fn is_query(input: &[u8]) -> IResult<&[u8], Token> {
@@ -54,7 +75,22 @@ mod tests {
         ] {
             let input = format!("{} FROM my_datastructure", action);
             let result = get_command_action(input.as_ref()).unwrap();
-            assert_eq!((b" FROM my_datastructure".as_ref(), token), result)
+            assert_eq!((b"FROM my_datastructure".as_ref(), token), result)
+        }
+    }
+
+    #[test]
+    fn parse_datastructure_name() {
+        // NOTE: newlines will break
+        for input in ["FROM my_datastructure ", "FROM   my_datastructure "] {
+            let result = get_datastructure_name(input.as_ref()).unwrap();
+            assert_eq!(
+                (
+                    b"".as_ref(),
+                    Token::Datastructure("my_datastructure".to_string())
+                ),
+                result
+            )
         }
     }
 }
