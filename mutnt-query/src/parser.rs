@@ -1,6 +1,11 @@
 //! Parser ...
 
 use nom::{branch::alt, bytes::complete::tag_no_case, IResult};
+
+use crate::{
+    command::{Command, CommandBuilder},
+    errors::Error,
+};
 pub struct Parser;
 
 #[derive(Debug, PartialEq)]
@@ -28,6 +33,12 @@ fn is_insert(input: &[u8]) -> IResult<&[u8], Token> {
 fn is_delete(input: &[u8]) -> IResult<&[u8], Token> {
     let (input, _) = tag_no_case("DELETE")(input)?;
     Ok((input, Token::Delete))
+}
+
+/// Entrypoint to parse a command
+pub fn parse(_input: &[u8]) -> Result<Command, Error> {
+    let builder = CommandBuilder::new();
+    builder.build_perhaps()
 }
 
 #[cfg(test)]

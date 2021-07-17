@@ -1,3 +1,5 @@
+use crate::errors::Error;
+
 /// A Command models the different input that the client can
 /// request `MuTNT` to do.
 pub struct Command {
@@ -20,4 +22,16 @@ pub enum Index {
     Numbered(usize),
     First,
     Last,
+}
+
+pub struct CommandBuilder;
+
+impl CommandBuilder {
+    pub fn new() -> Self {
+        CommandBuilder
+    }
+
+    pub fn build_perhaps(self) -> Result<Command, Error> {
+        Err(Error {})
+    }
 }
