@@ -3,7 +3,7 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag_no_case, take_till},
-    character::{complete::space1, is_space},
+    character::{complete::multispace1, is_space},
     IResult, Parser,
 };
 
@@ -26,15 +26,15 @@ enum Token {
 // gets the `Token` and removes subsequent whitespaces
 fn get_command_action(input: &[u8]) -> IResult<&[u8], Token> {
     alt((is_query, is_insert, is_delete))(input).and_then(|(i, token)| {
-        let (input, _) = space1(i)?;
+        let (input, _) = multispace1(i)?;
         Ok((input, token))
     })
 }
 
 fn get_datastructure_name(input: &[u8]) -> IResult<&[u8], Token> {
-    let (input, _) = tag_no_case("FROM")(input).and_then(|(i, _)| space1(i))?;
+    let (input, _) = tag_no_case("FROM")(input).and_then(|(i, _)| multispace1(i))?;
     let (input, data_structure_name) = take_till(is_space)(input)?;
-    let (input, _) = space1(input)?;
+    let (input, _) = multispace1(input)?;
     Ok((
         input,
         Token::Datastructure(String::from_utf8(data_structure_name.to_ascii_lowercase()).unwrap()),
@@ -82,7 +82,11 @@ mod tests {
     #[test]
     fn parse_datastructure_name() {
         // NOTE: newlines will break
-        for input in ["FROM my_datastructure ", "FROM   my_datastructure "] {
+        for input in [
+            "FROM my_datastructure ",
+            "FROM   my_datastructure ",
+            "FROM   \nmy_datastructure ",
+        ] {
             let result = get_datastructure_name(input.as_ref()).unwrap();
             assert_eq!(
                 (
