@@ -4,8 +4,7 @@ use nom::{
     branch::alt,
     bytes::complete::{tag_no_case, take_till, take_until},
     character::{complete::multispace1, is_space},
-    error::Error as NomError,
-    Finish, IResult,
+    Finish, IResult, Parser,
 };
 
 use crate::{
@@ -63,12 +62,13 @@ fn get_query_last(input: &[u8]) -> IResult<&[u8], Token> {
 }
 
 fn get_query_key(input: &[u8]) -> IResult<&[u8], Token> {
-    let (input, _) = tag_no_case("WHERE")(input)?;
-    let (input, _) = multispace1(input)?;
-    let (input, _) = tag_no_case("KEY")(input)?;
-    let (input, _) = multispace1(input)?;
-    let (input, _) = tag_no_case("=")(input)?;
-    let (input, _) = multispace1(input)?;
+    let (input, _) = tag_no_case("WHERE")
+        .and(multispace1)
+        .and(tag_no_case("KEY"))
+        .and(multispace1)
+        .and(tag_no_case("="))
+        .and(multispace1)
+        .parse(input)?;
     let (input, key) = take_until(";")(input)?;
     Ok((
         input,
@@ -77,12 +77,13 @@ fn get_query_key(input: &[u8]) -> IResult<&[u8], Token> {
 }
 
 fn get_query_index(input: &[u8]) -> IResult<&[u8], Token> {
-    let (input, _) = tag_no_case("WHERE")(input)?;
-    let (input, _) = multispace1(input)?;
-    let (input, _) = tag_no_case("INDEX")(input)?;
-    let (input, _) = multispace1(input)?;
-    let (input, _) = tag_no_case("=")(input)?;
-    let (input, _) = multispace1(input)?;
+    let (input, _) = tag_no_case("WHERE")
+        .and(multispace1)
+        .and(tag_no_case("INDEX"))
+        .and(multispace1)
+        .and(tag_no_case("="))
+        .and(multispace1)
+        .parse(input)?;
     let (input, idx_u8) = take_until(";")(input)?;
     let idx_str = String::from_utf8(idx_u8.to_ascii_lowercase().to_vec()).unwrap();
 
