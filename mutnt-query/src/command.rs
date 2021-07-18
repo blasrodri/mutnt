@@ -1,4 +1,6 @@
-use crate::errors::Error;
+use nom::error::ErrorKind;
+
+use crate::errors::QueryError;
 
 /// A Command models the different input that the client can
 /// request `MuTNT` to do.
@@ -31,7 +33,7 @@ impl CommandBuilder {
         CommandBuilder
     }
 
-    pub fn build_perhaps(self) -> Result<Command, Error> {
-        Err(Error {})
+    pub fn build_perhaps(self) -> Result<Command, QueryError> {
+        Err(QueryError::NomError(ErrorKind::Alpha))
     }
 }

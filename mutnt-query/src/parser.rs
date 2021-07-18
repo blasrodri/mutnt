@@ -4,12 +4,13 @@ use nom::{
     branch::alt,
     bytes::complete::{tag_no_case, take_till},
     character::{complete::multispace1, is_space},
-    IResult, Parser,
+    error::Error as NomError,
+    Finish, IResult,
 };
 
 use crate::{
     command::{Command, CommandBuilder},
-    errors::Error,
+    errors::QueryError,
 };
 
 #[derive(Debug, PartialEq)]
@@ -57,7 +58,10 @@ fn is_delete(input: &[u8]) -> IResult<&[u8], Token> {
 }
 
 /// Entrypoint to parse a command
-pub fn parse(_input: &[u8]) -> Result<Command, Error> {
+pub fn parse(input: &[u8]) -> Result<Command, QueryError> {
+    let (input, _command_action_token) = get_command_action(input)
+        .finish()
+        .map_err(|e| QueryError::NomError(e.code))?;
     let builder = CommandBuilder::new();
     builder.build_perhaps()
 }
