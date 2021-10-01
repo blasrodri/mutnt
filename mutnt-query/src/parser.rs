@@ -2,10 +2,9 @@
 
 use nom::{
     branch::alt,
-    bytes::complete::{tag_no_case, take_till},
+    bytes::complete::{tag_no_case, take_till, take_until},
     character::{complete::multispace1, is_space},
-    error::Error as NomError,
-    Finish, IResult,
+    Finish, IResult, Parser,
 };
 
 use crate::{
@@ -19,6 +18,12 @@ enum Token {
     Get,
     Insert,
     Delete,
+
+    // Query
+    QueryFirst,
+    QueryLast,
+    QueryKey(String),
+    QueryIndex(usize),
 
     // Datastructure
     Datastructure(String),
@@ -40,6 +45,49 @@ fn get_datastructure_name(input: &[u8]) -> IResult<&[u8], Token> {
         input,
         Token::Datastructure(String::from_utf8(data_structure_name.to_ascii_lowercase()).unwrap()),
     ))
+}
+
+fn get_query_token(input: &[u8]) -> IResult<&[u8], Token> {
+    alt((get_query_first, get_query_last))(input)
+}
+
+fn get_query_first(input: &[u8]) -> IResult<&[u8], Token> {
+    let (input, _) = tag_no_case("FIRST")(input)?;
+    Ok((input, Token::QueryFirst))
+}
+
+fn get_query_last(input: &[u8]) -> IResult<&[u8], Token> {
+    let (input, _) = tag_no_case("LAST")(input)?;
+    Ok((input, Token::QueryLast))
+}
+
+fn get_query_key(input: &[u8]) -> IResult<&[u8], Token> {
+    let (input, _) = tag_no_case("WHERE")
+        .and(multispace1)
+        .and(tag_no_case("KEY"))
+        .and(multispace1)
+        .and(tag_no_case("="))
+        .and(multispace1)
+        .parse(input)?;
+    let (input, key) = take_until(";")(input)?;
+    Ok((
+        input,
+        Token::QueryKey(String::from_utf8(key.to_ascii_lowercase().to_vec()).unwrap()),
+    ))
+}
+
+fn get_query_index(input: &[u8]) -> IResult<&[u8], Token> {
+    let (input, _) = tag_no_case("WHERE")
+        .and(multispace1)
+        .and(tag_no_case("INDEX"))
+        .and(multispace1)
+        .and(tag_no_case("="))
+        .and(multispace1)
+        .parse(input)?;
+    let (input, idx_u8) = take_until(";")(input)?;
+    let idx_str = String::from_utf8(idx_u8.to_ascii_lowercase().to_vec()).unwrap();
+
+    Ok((input, Token::QueryIndex(idx_str.parse().unwrap())))
 }
 
 fn is_query(input: &[u8]) -> IResult<&[u8], Token> {
